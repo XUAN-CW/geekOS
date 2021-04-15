@@ -154,7 +154,7 @@ romimage: file=$BXSHARE/BIOS-bochs-latest
 # newharddrivesupport: enabled=1
 ```
 
-#### 修改后的 .bochsrc
+### 修改后的 .bochsrc
 
  [.bochsrc](data\.bochsrc) 
 
