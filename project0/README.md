@@ -24,7 +24,7 @@ tags:
 
 - bochs-2.5 [下载页面](https://bochs.sourceforge.io/) | [直接下载](https://sourceforge.net/projects/bochs/files/bochs/2.5/bochs-2.5.tar.gz/download) 
 
-- geekos-0.3.0.zip [官网]( http://geekos.sourceforge.net/)
+- geekos-0.3.0.zip [官网]( http://geekos.sourceforge.net/) 
 
   将以上三个材料放到 虚拟机 `ubantu-12.04-64bit` 位置随意，我放在 `/os`
 
