@@ -105,6 +105,7 @@ USER_C_SRCS := \
 	semtest1.c semtest2.c p1.c p2.c p3.c \
 	schedtest.c sched1.c sched2.c sched3.c \
 	ping.c pong.c long.c \
+	semtest.c \
 	shell.c b.c c.c
 # User executables
 USER_PROGS := $(USER_C_SRCS:%.c=user/%.exe)
@@ -182,8 +183,8 @@ GENERRS := $(PERL) $(PROJECT_ROOT)/scripts/generrs
 # ----------------------------------------------------------------------
 
 # Flags used for all C source files
-GENERAL_OPTS := -O -Wall $(EXTRA_C_OPTS)
-CC_GENERAL_OPTS := $(GENERAL_OPTS) -Werror 
+GENERAL_OPTS := -O -Wall -fno-stack-protector $(EXTRA_C_OPTS)
+CC_GENERAL_OPTS := $(GENERAL_OPTS) 
 
 # Flags used for kernel C source files
 CC_KERNEL_OPTS := -g -DGEEKOS -I$(PROJECT_ROOT)/include
