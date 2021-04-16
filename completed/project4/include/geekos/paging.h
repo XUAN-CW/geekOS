@@ -37,6 +37,9 @@ struct User_Context;
 #define VM_READ    0	 /* Memory can be read (ignored for x86) */
 #define VM_EXEC    0	 /* Memory can be executed (ignored for x86) */
 
+#define USER_VM_START 0x80000000
+#define USER_VM_LEN 0x80000000
+#define DEFAULT_STACK_SIZE 4096
 
 /*
  * Page directory entry datatype.

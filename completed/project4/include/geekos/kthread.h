@@ -13,6 +13,8 @@
 #include <geekos/ktypes.h>
 #include <geekos/list.h>
 
+
+
 struct Kernel_Thread;
 struct User_Context;
 struct Interrupt_State;
@@ -101,6 +103,10 @@ typedef void (*Thread_Start_Func)(ulong_t arg);
  */
 #define MAX_QUEUE_LEVEL 4
 
+/*geekos scheduling policies*/
+#define SCHED_RR 0
+#define SCHED_MLF 1
+
 /*
  * Scheduler operations.
  */
@@ -121,7 +127,9 @@ void Yield(void);
 void Exit(int exitCode) __attribute__ ((noreturn));
 int Join(struct Kernel_Thread* kthread);
 struct Kernel_Thread* Lookup_Thread(int pid);
-
+int Change_Scheduling_Policy(int policy,int quantum);
+                                                         
+                                      
 /*
  * Thread context switch function, defined in lowlevel.asm
  */
@@ -154,6 +162,8 @@ extern volatile int g_preemptionDisabled;
  */
 #define MIN_DESTRUCTOR_ITERATIONS 4
 
+
+
 typedef void (*tlocal_destructor_t)(void *);
 typedef unsigned int tlocal_key_t;
 
@@ -163,6 +173,6 @@ extern void *Tlocal_Get(tlocal_key_t);
 
 /* Print list of all threads, for debugging. */
 extern void Dump_All_Thread_List(void);
-
+extern void Print_Queues(void);
 
 #endif  /* GEEKOS_KTHREAD_H */

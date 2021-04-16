@@ -1,3 +1,14 @@
+/*************************************************************************/
+/*
+ * GeekOS master source distribution and/or project solution
+ * Copyright (c) 2001,2003,2004 David H. Hovemeyer <daveho@cs.umd.edu>
+ * Copyright (c) 2003 Jeffrey K. Hollingsworth <hollings@cs.umd.edu>
+ *
+ * This file is not distributed under the standard GeekOS license.
+ * Publication or redistribution of this file without permission of
+ * the author(s) is prohibited.
+ */
+/*************************************************************************/
 /*
  * Common user mode functions
  * Copyright (c) 2001,2003,2004 David H. Hovemeyer <daveho@cs.umd.edu>
@@ -54,7 +65,6 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
     struct User_Context* old = kthread->userContext;
 
     kthread->userContext = 0;
-
     if (old != 0) {
 	int refCount;
 
@@ -85,20 +95,51 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
  */
 int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
 {
+    int rc;
+    char *exeFileData = 0;
+    ulong_t exeFileLength;
+    struct User_Context *userContext = 0;
+    struct Kernel_Thread *process = 0;
+    struct Exe_Format exeFormat;
+
     /*
-     * Hints:
-     * - Call Read_Fully() to load the entire executable into a memory buffer
-     * - Call Parse_ELF_Executable() to verify that the executable is
-     *   valid, and to populate an Exe_Format data structure describing
-     *   how the executable should be loaded
-     * - Call Load_User_Program() to create a User_Context with the loaded
-     *   program
-     * - Call Start_User_Thread() with the new User_Context
-     *
-     * If all goes well, store the pointer to the new thread in
-     * pThread and return 0.  Otherwise, return an error code.
+     * Load the executable file data, parse ELF headers,
+     * and load code and data segments into user memory.
      */
-    TODO("Spawn a process by reading an executable from a filesystem");
+//mydebug
+ Print("Spawn process %s \n", program);
+
+    if ((rc = Read_Fully(program, (void**) &exeFileData, &exeFileLength)) != 0 ||
+	(rc = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat)) != 0 ||
+	(rc = Load_User_Program(exeFileData, exeFileLength, &exeFormat, command, &userContext)) != 0)
+	goto fail;
+
+    /*
+     * User program has been loaded, so we can free the
+     * executable file data now.
+     */
+    Free(exeFileData);
+    exeFileData = 0;
+
+
+    /* Start the process! */
+    process = Start_User_Thread(userContext, false);
+    if (process != 0) {
+	KASSERT(process->refCount == 2);
+	/* Return Kernel_Thread pointer */
+	*pThread = process;
+    } else
+	rc = ENOMEM;
+
+    return rc;
+
+fail:
+    if (exeFileData != 0)
+	Free(exeFileData);
+    if (userContext != 0)
+	Destroy_User_Context(userContext);
+
+    return rc;
 }
 
 /*
@@ -112,11 +153,43 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
  */
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
+    static struct User_Context* s_currentUserContext;  /* last user context used */
+    extern int userDebug;
+    struct User_Context* userContext = kthread->userContext;
+
     /*
-     * Hint: Before executing in user mode, you will need to call
-     * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
-     * functions.
+     * FIXME: could avoid resetting ss0/esp0 if not returning
+     * to user space.
      */
-    TODO("Switch to a new user address space, if necessary");
+
+    KASSERT(!Interrupts_Enabled());
+
+    if (userContext == 0) {
+	/* Kernel mode thread: no need to switch address space. */
+	return;
+    }
+
+    /* Switch only if the user context is indeed different */
+    if (userContext != s_currentUserContext) {
+        ulong_t esp0;
+
+        if (userDebug) Print("A[%p]\n", kthread);
+
+	/* Switch to address space of user context */
+	Switch_To_Address_Space(userContext);
+
+        /*
+         * By definition, when returning to user mode there is no
+         * context remaining on the kernel stack.
+         */
+        esp0 = ((ulong_t) kthread->stackPage) + PAGE_SIZE;
+        if (userDebug) Print("S[%lx]\n", esp0);
+
+	/* Change to the kernel stack of the new process. */
+	Set_Kernel_Stack_Pointer(esp0);
+
+        /* New user context is active */
+        s_currentUserContext = userContext;
+    }
 }
 

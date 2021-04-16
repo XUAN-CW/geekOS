@@ -4,7 +4,7 @@
  * Copyright (c) 2003, Jeffrey K. Hollingsworth <hollings@cs.umd.edu>
  * Copyright (c) 2004, Iulian Neamtiu <neamtiu@cs.umd.edu>
  * $Revision: 1.51 $
- * 
+ *
  * This is free software.  You are permitted to use,
  * redistribute, and modify it as specified in the file "COPYING".
  */
@@ -80,9 +80,7 @@ void Main(struct Boot_Info* bootInfo)
     Print("Welcome to GeekOS!\n");
     Set_Current_Attr(ATTRIB(BLACK, GRAY));
 
-
-
-
+    //生成一个进程
     Spawn_Init_Process();
 
     /* Now this thread is done. */
@@ -108,5 +106,20 @@ static void Mount_Root_Filesystem(void)
 
 static void Spawn_Init_Process(void)
 {
-    TODO("Spawn the init process");
+    int rc;
+    struct Kernel_Thread *initProcess;
+
+    /* Load and run a.exe, the "init" process */
+    Print("Spawning init process (%s)\n", INIT_PROGRAM);
+    rc = Spawn("/c/shell.exe", "/c/shell.exe",
+	&initProcess);
+
+
+    if (rc != 0) {
+	Print("Failed to spawn init process: error code = %d\n",rc);
+    } else {
+	/* Wait for it to exit */
+	int exitCode = Join(initProcess);
+	Print("Init process exited with code %d\n", exitCode);
+    }
 }
