@@ -1,0 +1,5 @@
+megs: 8
+boot: a
+floppya: 1_44=fd.img, status=inserted
+log: ./bochs.out
+ata0-master: type=disk, path=diskc.img, mode=flat, cylinders=40, heads=8, spt=64
