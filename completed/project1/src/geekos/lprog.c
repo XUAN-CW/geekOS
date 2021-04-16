@@ -26,7 +26,7 @@ extern void Trampoline(unsigned short CodeSelector, unsigned short DataSelector,
 static void Printrap_Handler(struct Interrupt_State* state);
 
 static void * virtSpace;
-
+static unsigned long virtSize;
 static int lprogdebug = 0;
 
 /* 
@@ -36,7 +36,7 @@ static int lprogdebug = 0;
 static int Spawn_Program(char *exeFileData, struct Exe_Format *exeFormat)
 {
   struct Segment_Descriptor* desc;
-  unsigned long virtSize;
+  //static unsigned long virtSize;
   unsigned short codeSelector, dataSelector;
 
   int i;
@@ -181,10 +181,15 @@ fail:
 
 static void Printrap_Handler( struct Interrupt_State* state )
 {
-  char * msg = (char *)virtSpace + state->eax;
-
-  Print(msg);
-
-  g_needReschedule = true;
-  return;
+    char *msg;
+    /* 此处修改以下内容以正确显示 a.c 中的局部变量 */
+    if (state->eax <= virtSize)
+        msg = (char *)virtSpace + state->eax;
+    else
+        msg = (char *)state->eax;
+    print(msg);
+    g_needReschedule = true;
+    return;
 }
+
+
