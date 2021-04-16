@@ -300,21 +300,53 @@ static void Setup_Kernel_Thread(
 /*
  * Set up the a user mode thread.
  */
-/*static*/ void Setup_User_Thread(
+/*
+ * Set up the a user mode thread.
+ */
+void Setup_User_Thread(
     struct Kernel_Thread* kthread, struct User_Context* userContext)
 {
     /*
-     * Hints:
-     * - Call Attach_User_Context() to attach the user context
-     *   to the Kernel_Thread
-     * - Set up initial thread stack to make it appear that
-     *   the thread was interrupted while in user mode
-     *   just before the entry point instruction was executed
-     * - The esi register should contain the address of
-     *   the argument block
+     * Push the argument to the thread start function, and the
+     * return address (the Shutdown_Thread function, so the thread will
+     * go away cleanly when the start function returns).
      */
-    TODO("Create a new thread to execute in user mode");
+    ulong_t eflags = EFLAGS_IF;     
+    unsigned int csSelector = userContext->csSelector;  /* CS 选择子 */     
+    unsigned int dsSelector = userContext->dsSelector;  /* DS 选择子 */ 
+
+    /* 调用 Attach_User_Context 加载用户上下文 */  
+    Attach_User_Context(kthread, userContext); 
+
+    /* 初始化用户态进程堆栈，使之看上去像刚被中断运行一样 */     
+    /* 分别调用 Push 函数将以下数据压入堆栈 */     
+    Push(kthread, dsSelector);  /* DS 选择子 */     
+    Push(kthread, userContext->stackPointerAddr);  /* 堆栈指针 */     
+    Push(kthread, eflags);  /* Eflags */     
+    Push(kthread, csSelector);  /* CS 选择子 */     
+    Push(kthread, userContext->entryAddr);  /* 程序计数器 */     
+    Push(kthread, 0);  /* 错误代码(0) */     
+    Push(kthread, 0);  /* 中断号(0) */ 
+
+//    if (uthreadDebug)         
+//      Print("Entry addr=%lx\n", userContext->entryAddr); 
+
+    /* 初始化通用寄存单元，向 esi 传递参数块地址 */     
+    Push(kthread, 0);  /* eax */     
+    Push(kthread, 0);  /* ebx */     
+    Push(kthread, 0);  /* ecx */     
+    Push(kthread, 0);  /* edx */     
+    Push(kthread, userContext->argBlockAddr);  /* esi */     
+    Push(kthread, 0);  /* edi */     
+    Push(kthread, 0);  /* ebp */ 
+
+    /* 初始化数据段寄存单元 */     
+    Push(kthread, dsSelector);  /* ds */     
+    Push(kthread, dsSelector);  /* es */     
+    Push(kthread, dsSelector);  /* fs */     
+    Push(kthread, dsSelector);  /* gs */ 
 }
+
 
 
 /*
@@ -504,18 +536,32 @@ struct Kernel_Thread* Start_Kernel_Thread(
  * Start a user-mode thread (i.e., a process), using given user context.
  * Returns pointer to the new thread if successful, null otherwise.
  */
+/*
+ * Start a user-mode thread (i.e., a process), using given user context.
+ * Returns pointer to the new thread if successful, null otherwise.
+ */
 struct Kernel_Thread*
 Start_User_Thread(struct User_Context* userContext, bool detached)
 {
-    /*
-     * Hints:
-     * - Use Create_Thread() to create a new "raw" thread object
-     * - Call Setup_User_Thread() to get the thread ready to
-     *   execute in user mode
-     * - Call Make_Runnable_Atomic() to schedule the process
-     *   for execution
-     */
-    TODO("Start user thread");
+    /* 如果传入的用户上下文字段为空(非用户态进程)则返回错误 */     
+    if (userContext == NULL)     
+    {                
+        return NULL;    
+    } 
+
+    /* 建立用户态进程 */     
+    struct Kernel_Thread *kthread = Create_Thread(PRIORITY_USER, detached);     
+    if (kthread == NULL) 
+    {                  
+        return NULL;     
+    }     
+    Setup_User_Thread(kthread, userContext);     
+
+    /* 将新创建的进程加入就绪进程队列 */     
+    Make_Runnable_Atomic(kthread); 
+
+    /* 新用户态进程创建成功，返回指向该进程的指针 */    
+    return kthread; 
 }
 
 /*

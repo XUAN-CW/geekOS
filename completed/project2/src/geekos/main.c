@@ -48,7 +48,11 @@
 
 
 static void Mount_Root_Filesystem(void);
-static void Spawn_Init_Process(void);
+static void Spawn_Init_Process(void)
+{
+    struct Kernel_Thread *pThread;
+    Spawn("/c/shell.exe","/c/shell.exe",&pThread); 
+}
 
 /*
  * Kernel C code entry point.
