@@ -65,8 +65,7 @@ cd 到 `bochs-2.5.tar.gz` 所在目录
 ```sh
 tar -zxvf bochs-2.5.tar.gz
 cd bochs-2.5/
-# 配置参数打开调试功能开关
-./configure --enable-debugger --enable-disasm
+./configure
 # 编译安装
 make clean && make && make install
 ```
