@@ -10,6 +10,8 @@
 
  [introduction](introduction) 放着 project 的相关信息，我就是看着里面的东西做出来的
 
+环境搭建见 [environment](introduction/environment)
+
 # 未完成
 
 - [ ] 整理完善 introduction ，写出应该输入什么、有什么现象
